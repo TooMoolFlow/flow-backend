@@ -1,0 +1,2 @@
+ALTER TABLE request_photos
+    ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT NOW();

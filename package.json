@@ -1,0 +1,51 @@
+{
+  "name": "workflow-service-back",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "src/main/index.js",
+  "scripts": {
+    "dev": "node src/main/index.js",
+    "lint": "eslint .",
+    "test": "node --test src/main/services/healthy/*.test.js src/main/dto/*.test.js src/main/middleware/*.test.js src/main/utils/*.test.js",
+    "migrate:photos": "node scripts/migrate-photos-to-cloudinary.js"
+  },
+  "private": true,
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.5",
+    "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^1.41.3",
+    "cookie": "^1.0.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "firebase-admin": "^12.0.0",
+    "json2csv": "^6.0.0-alpha.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^4.2.1",
+    "node-pg-migrate": "^8.0.3",
+    "nodemailer": "^7.0.5",
+    "p-limit": "^7.3.0",
+    "pg": "^8.16.2",
+    "sequelize": "^6.37.7",
+    "sharp": "^0.34.5",
+    "swagger-ui-express": "^5.0.1",
+    "web-push": "^3.6.7",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "xlsx-populate": "^1.21.0",
+    "yaml": "^2.8.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "globals": "^16.2.0"
+  }
+}

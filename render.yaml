@@ -1,0 +1,10 @@
+# Render Blueprint — не задавайте Root Directory для этого репозитория.
+# Команда запуска должна выполняться из корня репозитория, иначе пути дают дублирование src (src/src/main/...).
+
+services:
+  - type: web
+    runtime: node
+    name: workflow-back
+    buildCommand: npm install
+    startCommand: node src/main/index.js
+    # Root Directory оставьте пустым в Dashboard (не указывайте "src")

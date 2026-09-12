@@ -1,0 +1,3 @@
+ALTER TABLE offices
+    ADD COLUMN lat NUMERIC(9,6),
+ADD COLUMN lon NUMERIC(9,6);

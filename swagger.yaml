@@ -1,0 +1,1683 @@
+openapi: 3.1.0
+info:
+  title: Workflow Service Backend API
+  description: API documentation for Workflow Service platform
+  version: 1.0.0
+servers:
+  - url: https://api.workflow-service.kz
+paths:
+  /api/requests:
+    post:
+      summary: Create a new request
+      tags: [Request]
+      responses:
+        '201':
+          description: Created
+    get:
+      summary: Get all requests
+      tags: [Request]
+      responses:
+        '200':
+          description: A list of all requests
+
+  /api/requests/user:
+    get:
+      summary: Get requests by the current user
+      tags: [Request]
+      responses:
+        '200':
+          description: A list of requests by the current user
+        '404':
+          description: Not found
+
+  /api/requests/{id}:
+    get:
+      summary: Get a request by ID
+      tags: [Request]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Found
+        '404':
+          description: Not found
+    put:
+      summary: Update a request
+      tags: [Request]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated
+        '404':
+          description: Not found
+    patch:
+      summary: Partially update a request (Universal PATCH endpoint)
+      description: |
+        Universal PATCH endpoint for updating request fields with role-based permissions.
+        
+        **Permissions by role:**
+        - **admin-worker**: Can update all fields
+        - **manager**: Can update all fields  
+        - **department-head**: Can update all fields
+        - **executor**: Can only update status, comment, actual_completion_date for assigned requests
+        - **client**: Can only update title, description, location, location_detail for own requests
+        
+        **Special behaviors:**
+        - Setting status to 'rejected' will delete the request
+        - Setting status to 'execution' will set date_submitted
+        - Setting status to 'completed' will set actual_completion_date
+        - Changing executor_id will notify the new executor
+        - **patch_code: 1**: Sends notifications to all department-head users in the request office
+      tags: [Request]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRequestSchema'
+      responses:
+        '200':
+          description: Request updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Request updated successfully"
+                  data:
+                    $ref: '#/components/schemas/Request'
+        '400':
+          description: Validation error or business logic error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Validation error"
+                  details:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          type: string
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Forbidden"
+                  message:
+                    type: string
+                    example: "Insufficient permissions"
+        '404':
+          description: Request not found
+    delete:
+      summary: Delete a request
+      tags: [Request]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not found
+
+  /api/requests/admin-worker/me:
+    get:
+      summary: Get requests for the current admin worker
+      tags: [Request]
+      responses:
+        '200':
+          description: My and other requests for the admin worker
+
+  /api/requests/status/{id}:
+    patch:
+      summary: Update request status by ID
+      tags: [Request]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminWorkerRequestStatus'
+      responses:
+        '200':
+          description: Status updated
+        '400':
+          description: Invalid status or missing required fields
+        '404':
+          description: Request not found
+  /api/auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  format: "+7 XXX XXX XX XX"
+                password:
+                  type: string
+              required: [phone, password]
+      responses:
+        '200':
+          description: Successful login
+        '401':
+          description: Invalid credentials
+
+  /api/service-categories:
+    get:
+      summary: Get all service categories
+      tags: [ServiceCategory]
+      responses:
+        '200':
+          description: A list of service categories
+    post:
+      summary: Create a new service category
+      tags: [ServiceCategory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategory'
+      responses:
+        '201':
+          description: Created
+
+  /api/service-categories/{id}:
+    get:
+      summary: Get a service category by ID
+      tags: [ServiceCategory]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Found
+        '404':
+          description: Not found
+    put:
+      summary: Update a service category
+      tags: [ServiceCategory]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategory'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete a service category
+      tags: [ServiceCategory]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /api/offices:
+    get:
+      summary: Get all offices
+      tags: [Office]
+      responses:
+        '200':
+          description: A list of offices
+    post:
+      summary: Create a new office
+      tags: [Office]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Office'
+      responses:
+        '201':
+          description: Created
+
+  /api/offices/{id}:
+    get:
+      summary: Get an office by ID
+      tags: [Office]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Found
+        '404':
+          description: Not found
+    put:
+      summary: Update an office
+      tags: [Office]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Office'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete an office
+      tags: [Office]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /api/users:
+    get:
+      summary: Get all users
+      tags: [User]
+      responses:
+        '200':
+          description: A list of users
+    post:
+      summary: Create a new user
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Created
+
+  /api/users/{id}:
+    get:
+      summary: Get a user by ID
+      tags: [User]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Found
+        '404':
+          description: Not found
+    put:
+      summary: Update a user
+      tags: [User]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete a user
+      tags: [User]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /api/chat-messages/request/{requestId}:
+    get:
+      summary: Get chat messages by request ID
+      tags: [ChatMessage]
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of chat messages related to a request
+        '404':
+          description: Request not found
+
+  /api/comments:
+    get:
+      summary: Get all request comments
+      tags: [Comment]
+      responses:
+        '200':
+          description: A list of all request comments
+    post:
+      summary: Create a new request comment
+      tags: [Comment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '201':
+          description: Created
+
+  /api/comments/{id}:
+    get:
+      summary: Get a request comment by ID
+      tags: [Comment]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Found
+        '404':
+          description: Not found
+    put:
+      summary: Update a request comment
+      tags: [Comment]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete a request comment
+      tags: [Comment]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /api/comments/request/{requestId}:
+    get:
+      summary: Get comments by request ID
+      tags: [Comment]
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of comments related to a request
+        '404':
+          description: Request not found
+
+  /api/notifications/me:
+    get:
+      summary: Get notifications for the current user
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of user notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  /api/notifications/{id}/read:
+    patch:
+      summary: Mark a notification as read
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '403':
+          description: Forbidden
+        '404':
+          description: Notification not found
+
+  /api/notifications/{id}:
+    delete:
+      summary: Delete a notification
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '403':
+          description: Forbidden
+        '404':
+          description: Notification not found
+
+  /api/departments/me:
+    get:
+      summary: Get department heads from the same office as the current user
+      description: Returns all users with role 'department-head' from the same office as the authenticated user
+      tags: [Department]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved department heads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DepartmentHead'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found or user not assigned to office
+        '500':
+          description: Internal server error
+  
+  
+  /api/meeting-rooms:
+    get:
+      summary: Get all meeting rooms (with filters)
+      tags: [MeetingRoom]
+      parameters:
+        - in: query
+          name: office_id
+          schema:
+            type: integer
+          description: Filter by office ID
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Filter by partial room name
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+          description: Filter by active status (true/false)
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [available, booked]
+          description: Filter by booking status
+        - in: query
+          name: capacityMin
+          schema:
+            type: integer
+          description: Minimum capacity
+        - in: query
+          name: capacityMax
+          schema:
+            type: integer
+          description: Maximum capacity
+      responses:
+        '200':
+          description: List of meeting rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingRoom'
+
+    post:
+      summary: Create a new meeting room
+      tags: [MeetingRoom]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingRoomCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoom'
+
+  /api/meeting-rooms/{id}:
+    get:
+      summary: Get meeting room by ID
+      tags: [MeetingRoom]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoom'
+        '404':
+          description: Not found
+
+    put:
+      summary: Update a meeting room
+      tags: [MeetingRoom]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingRoomUpdate'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoom'
+
+    delete:
+      summary: Delete a meeting room
+      tags: [MeetingRoom]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not found
+
+  /api/meeting-rooms/{id}/toggle-active:
+    patch:
+      summary: Toggle meeting room active state
+      tags: [MeetingRoom]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Toggled active state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoom'
+        '404':
+          description: Not found
+
+  /api/meeting-rooms/{id}/status:
+    patch:
+      summary: Update meeting room booking status
+      tags: [MeetingRoom]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [available, booked]
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoom'
+        '404':
+          description: Not found
+
+  /api/meeting-rooms/{id}/duplicate:
+    post:
+      summary: Duplicate an existing meeting room
+      tags: [MeetingRoom]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Room duplicated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoom'
+        '404':
+          description: Not found
+
+  /api/offices/{id}/rooms:
+    get:
+      summary: Get meeting rooms for a specific office
+      tags: [Office, MeetingRoom]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: include_availability
+          schema:
+            type: boolean
+          description: Optional flag for clients to request basic availability metadata
+      responses:
+        '200':
+          description: List of rooms for the office
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingRoom'
+        '404':
+          description: Office not found
+
+  /api/meeting-room-bookings/availability:
+    get:
+      summary: Search meeting rooms by availability within a time window
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: start_time
+          required: true
+          schema:
+            type: string
+            example: "14:00"
+        - in: query
+          name: end_time
+          required: true
+          schema:
+            type: string
+            example: "15:00"
+        - in: query
+          name: office_id
+          schema:
+            type: integer
+        - in: query
+          name: floor
+          schema:
+            type: integer
+        - in: query
+          name: capacity
+          schema:
+            type: integer
+        - in: query
+          name: equipment
+          schema:
+            type: string
+          description: Comma-separated equipment names
+        - in: query
+          name: include_free_slots
+          schema:
+            type: boolean
+          description: When true, returns computed free slots for the window
+        - in: query
+          name: slot_minutes
+          schema:
+            type: integer
+          description: Slot duration in minutes (used when include_free_slots=true)
+      responses:
+        '200':
+          description: Rooms with availability details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingRoomAvailability'
+
+  /api/meeting-room-bookings/rooms/{id}/availability:
+    get:
+      summary: Get daily availability and slots for a specific room
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: slot_minutes
+          schema:
+            type: integer
+          description: Slot duration in minutes (defaults to 60)
+      responses:
+        '200':
+          description: Room availability with bookings and slot grid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomDailyAvailability'
+        '404':
+          description: Room not found
+
+  /api/meeting-room-bookings/statistics:
+    get:
+      summary: Get monthly meeting room statistics with occupancy indicators
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Monthly statistics for meeting rooms
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoomStatistics'
+
+  /api/meeting-room-bookings:
+    get:
+      summary: Get all bookings (admin/manager)
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: office_id
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [scheduled, confirmed, in_progress, completed, cancelled, auto_cancelled]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingRoomBookingDetail'
+    post:
+      summary: Create a booking
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingRoomBookingCreate'
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoomBookingDetail'
+
+  /api/meeting-room-bookings/incoming:
+    get:
+      summary: Get incoming bookings for administrators
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: office_id
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [scheduled, confirmed, in_progress, completed, cancelled, auto_cancelled]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Incoming bookings list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingRoomBookingDetail'
+
+  /api/meeting-room-bookings/my:
+    get:
+      summary: Get bookings for the authenticated client
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Client bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingRoomBookingDetail'
+
+  /api/meeting-room-bookings/{id}/reschedule:
+    patch:
+      summary: Reschedule a booking
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingRoomBookingUpdate'
+      responses:
+        '200':
+          description: Booking rescheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoomBookingDetail'
+        '404':
+          description: Booking not found
+
+  /api/meeting-room-bookings/{id}:
+    delete:
+      summary: Cancel a booking
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoomBookingDetail'
+        '404':
+          description: Booking not found
+
+  /api/meeting-room-bookings/{id}/confirm-attendance:
+    post:
+      summary: Confirm attendance for a booking
+      tags: [MeetingRoomBooking]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Attendance confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingRoomBookingDetail'
+        '404':
+          description: Booking not found
+
+
+
+components:
+  schemas:
+    ServiceCategory:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    Office:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+      required:
+        - name
+        - address
+        - city
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        full_name:
+          type: string
+        office_id:
+          type: integer
+      required:
+        - email
+        - password
+        - full_name
+        - office_id
+    Comment:
+      type: object
+      properties:
+        request_id:
+          type: integer
+        comment:
+          type: string
+      required:
+        - request_id
+        - comment
+
+    AdminWorkerRequestStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [rejected, awaiting_assignment]
+        complexity:
+          type: string
+          enum: [simple, medium, complex]
+        sla:
+          type: string
+        category_id:
+          type: integer
+        rejection_reason:
+          type: string
+      required:
+        - status
+
+    UpdateRequestSchema:
+      type: object
+      description: Schema for universal PATCH endpoint to update request fields
+      properties:
+        # Основные поля
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Request title
+        description:
+          type: string
+          description: Request description
+        location:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Request location
+        location_detail:
+          type: string
+          maxLength: 255
+          description: Additional location details
+        
+        # Статус и тип
+        status:
+          type: string
+          enum: [in_progress, execution, completed, rejected, awaiting_assignment, awaiting_sla, assigned]
+          description: Request status
+        request_type:
+          type: string
+          enum: [normal, urgent, planned]
+          description: Request type
+        
+        # Связанные сущности
+        office_id:
+          type: integer
+          minimum: 1
+          description: Office ID
+        plan_id:
+          type: integer
+          minimum: 1
+          description: Plan ID
+        category_id:
+          type: integer
+          minimum: 1
+          description: Service category ID
+        executor_id:
+          type: integer
+          minimum: 1
+          description: Executor ID
+        
+        # Дополнительные поля
+        complexity:
+          type: string
+          enum: [simple, medium, complex]
+          description: Request complexity level
+        sla:
+          type: string
+          description: Service Level Agreement
+        comment:
+          type: string
+          maxLength: 255
+          description: Additional comment
+        is_long_term:
+          type: boolean
+          description: Long-term request flag
+        
+        # Даты
+        planned_date:
+          type: string
+          format: date-time
+          description: Planned completion date
+        actual_completion_date:
+          type: string
+          format: date-time
+          description: Actual completion date
+        
+        # Причина отклонения
+        rejection_reason:
+          type: string
+          description: Reason for rejection (required when status is rejected)
+        
+        # Специальный код для идентификации типа патча
+        patch_code:
+          type: integer
+          minimum: 1
+          description: Special code to identify patch type (1 for department-head notifications, 3 for admin SLA/complexity updates)
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        request_id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - user_id
+        - request_id
+        - title
+        - content
+        - is_read
+        - created_at
+    DepartmentHead:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: User ID
+          example: 1
+        full_name:
+          type: string
+          description: Full name of the office manager (department-head)
+          example: "Иван Иванов"
+        office_id:
+          type: integer
+          description: Office the manager is bound to
+          example: 1
+      required:
+        - id
+        - full_name
+        - office_id
+
+    
+    MeetingRoom:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        floor:
+          type: integer
+        capacity:
+          type: integer
+        equipment:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [available, booked]
+        isActive:
+          type: boolean
+        description:
+          type: string
+        office_id:
+          type: integer
+      required:
+        - name
+        - floor
+        - capacity
+        - office_id
+        - isActive
+        - status
+
+    MeetingRoomCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        floor:
+          type: integer
+        capacity:
+          type: integer
+        equipment:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [available, booked]
+        description:
+          type: string
+        office_id:
+          type: integer
+      required:
+        - name
+        - floor
+        - capacity
+        - office_id
+
+    MeetingRoomUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        floor:
+          type: integer
+        capacity:
+          type: integer
+        equipment:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [available, booked]
+        isActive:
+          type: boolean
+        description:
+          type: string
+        office_id:
+          type: integer
+
+    MeetingRoomBooking:
+      type: object
+      properties:
+        id:
+          type: integer
+        meeting_room_id:
+          type: integer
+        office_id:
+          type: integer
+        client_id:
+          type: integer
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, confirmed, in_progress, completed, cancelled, auto_cancelled]
+        comment:
+          type: string
+        company_name:
+          type: string
+        reminder_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        attendance_confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        cancelled_by:
+          type: string
+        cancellation_reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MeetingRoomBookingCreate:
+      type: object
+      properties:
+        meeting_room_id:
+          type: integer
+        date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          example: "14:00"
+        end_time:
+          type: string
+          example: "15:00"
+        comment:
+          type: string
+        company_name:
+          type: string
+      required:
+        - meeting_room_id
+        - date
+        - start_time
+        - end_time
+
+    MeetingRoomBookingUpdate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          example: "14:00"
+        end_time:
+          type: string
+          example: "15:00"
+        company_name:
+          type: string
+      required:
+        - date
+        - start_time
+        - end_time
+
+    MeetingRoomBookingSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+        client:
+          type: object
+          properties:
+            id:
+              type: integer
+            firstName:
+              type: string
+            lastName:
+              type: string
+            username:
+              type: string
+
+    MeetingRoomBookingDetail:
+      allOf:
+        - $ref: '#/components/schemas/MeetingRoomBooking'
+        - type: object
+          properties:
+            meetingRoom:
+              $ref: '#/components/schemas/MeetingRoom'
+            office:
+              $ref: '#/components/schemas/Office'
+            client:
+              type: object
+              properties:
+                id:
+                  type: integer
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                username:
+                  type: string
+
+    BookingSlot:
+      type: object
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        is_available:
+          type: boolean
+        booking_id:
+          type: integer
+          nullable: true
+        booking_status:
+          type: string
+          nullable: true
+
+    MeetingRoomAvailability:
+      allOf:
+        - $ref: '#/components/schemas/MeetingRoom'
+        - type: object
+          properties:
+            availability:
+              type: object
+              properties:
+                is_available:
+                  type: boolean
+                conflicts:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MeetingRoomBookingSummary'
+                free_slots:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/BookingSlot'
+
+    RoomDailyAvailability:
+      type: object
+      properties:
+        room:
+          $ref: '#/components/schemas/MeetingRoom'
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingRoomBookingSummary'
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingSlot'
+
+    MeetingRoomOccupancySummary:
+      type: object
+      properties:
+        room_id:
+          type: integer
+        room_name:
+          type: string
+        office_name:
+          type: string
+        occupancy_percentage:
+          type: number
+          format: float
+
+    MeetingRoomOccupancyIndicator:
+      allOf:
+        - $ref: '#/components/schemas/MeetingRoomOccupancySummary'
+        - type: object
+          properties:
+            occupancy_level:
+              type: string
+              enum: [green, yellow, red]
+
+    MeetingRoomPeakHour:
+      type: object
+      properties:
+        hour:
+          type: integer
+        booking_count:
+          type: integer
+
+    MeetingRoomStatistics:
+      type: object
+      properties:
+        mostLoadedRooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingRoomOccupancySummary'
+        mostFreeRooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingRoomOccupancySummary'
+        peakHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingRoomPeakHour'
+        averageBookingDuration:
+          type: integer
+          description: Average booking duration in minutes
+        totalBookingsThisMonth:
+          type: integer
+        cancellationsAndNoShows:
+          type: integer
+        occupancyIndicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingRoomOccupancyIndicator'
+
+
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

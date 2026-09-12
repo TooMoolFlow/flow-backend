@@ -1,0 +1,3 @@
+ALTER TABLE offices
+    ADD COLUMN IF NOT EXISTS photo TEXT;
+

@@ -1,0 +1,4 @@
+ALTER TABLE users
+    ADD COLUMN email_notifications BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN security_notifications BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN marketing_notifications BOOLEAN NOT NULL DEFAULT FALSE;

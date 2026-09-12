@@ -1,0 +1,2 @@
+ALTER TABLE requests
+ADD COLUMN location VARCHAR(255) NOT NULL;
