@@ -39,6 +39,11 @@ WHERE NOT EXISTS (
       AND existing.name = src.name
 );
 
+-- Строки без office_id остаются только если на момент миграции ещё нет ни одного офиса
+-- (свежая база) - им некого назначить, поэтому удаляем как устаревшие плейсхолдеры;
+-- подкатегории удалятся каскадом (FOREIGN KEY ... ON DELETE CASCADE)
+DELETE FROM service_categories WHERE office_id IS NULL;
+
 ALTER TABLE service_categories
     ALTER COLUMN office_id SET NOT NULL;
 
