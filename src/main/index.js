@@ -31,6 +31,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:3000',
     'https://workflow-service-front.vercel.app',
+    'https://flow-frontend-ten.vercel.app',
     'http://192.168.215.72:3000',
     'https://app.tmk-workflow.kz'
   ],
